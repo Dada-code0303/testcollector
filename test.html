@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文件上传与标签</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        .file-upload {
+            margin-bottom: 20px;
+        }
+        .tag-input {
+            margin-bottom: 20px;
+        }
+        .tag-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .tag-list li {
+            display: inline;
+            margin-right: 10px;
+            background-color: #e0e0e0;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .file-item {
+            margin-bottom: 10px;
+        }
+        .file-preview {
+            margin-top: 10px;
+        }
+        .file-preview img {
+            max-width: 100%;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>文件上传与标签</h1>
+        
+        <!-- 文件上传表单 -->
+        <div class="file-upload">
+            <label for="file-input">选择文件:</label>
+            <input type="file" id="file-input" multiple>
+        </div>
+        
+        <!-- 标签输入区域 -->
+        <div class="tag-input">
+            <label for="tag-input">为文件添加标签 (多个标签用逗号分隔):</label>
+            <input type="text" id="tag-input">
+        </div>
+        
+        <!-- 上传按钮 -->
+        <button onclick="uploadFile()">上传文件</button>
+        
+        <hr>
+        
+        <!-- 已上传的文件列表 -->
+        <h2>已上传的文件</h2>
+        <div id="file-list">
+            <!-- 文件项会在这里显示 -->
+        </div>
+    </div>
+
+    <script>
+        let files = []; // 存储上传的文件
+        let tags = {};  // 存储每个文件对应的标签
+        
+        function uploadFile() {
+            const fileInput = document.getElementById("file-input");
+            const tagInput = document.getElementById("tag-input");
+            const fileList = document.getElementById("file-list");
+            
+            const selectedFiles = fileInput.files;
+            const tagText = tagInput.value.trim();
+            const tagArray = tagText ? tagText.split(',').map(tag => tag.trim()) : [];
+            
+            if (selectedFiles.length === 0) {
+                alert("请选择文件上传");
+                return;
+            }
+            
+            // 为每个文件添加标签
+            for (let file of selectedFiles) {
+                files.push(file);
+                tags[file.name] = tagArray;
+            }
+            
+            // 更新文件列表显示
+            updateFileList();
+            
+            // 清空表单
+            fileInput.value = "";
+            tagInput.value = "";
+        }
+        
+        function updateFileList() {
+            const fileList = document.getElementById("file-list");
+            fileList.innerHTML = ""; // 清空当前列表
+            
+            // 遍历并显示文件和标签
+            files.forEach((file) => {
+                const fileItem = document.createElement("div");
+                fileItem.classList.add("file-item");
+                
+                const fileName = document.createElement("strong");
+                fileName.textContent = file.name;
+                fileName.style.cursor = "pointer";
+                fileName.onclick = () => previewFile(file);
+                
+                const tagList = document.createElement("ul");
+                tagList.classList.add("tag-list");
+                
+                const fileTags = tags[file.name];
+                fileTags.forEach((tag) => {
+                    const tagItem = document.createElement("li");
+                    tagItem.textContent = tag;
+                    tagList.appendChild(tagItem);
+                });
+                
+                fileItem.appendChild(fileName);
+                fileItem.appendChild(tagList);
+                fileList.appendChild(fileItem);
+            });
+        }
+        
+        function previewFile(file) {
+    const filePreview = document.createElement("div");
+    filePreview.classList.add("file-preview");
+    const fileList = document.getElementById("file-list");
+    
+    // 如果已经有文件预览区，先清空
+    const existingPreview = document.querySelector(".file-preview");
+    if (existingPreview) {
+        existingPreview.remove();
+    }
+    
+    // 创建关闭按钮
+    const closeButton = document.createElement("button");
+    closeButton.textContent = "关闭预览";
+    closeButton.onclick = () => {
+        filePreview.remove();  // 删除文件预览区域
+    };
+    filePreview.appendChild(closeButton);
+    
+    // 根据文件类型进行预览
+    const fileReader = new FileReader();
+    
+    fileReader.onload = (e) => {
+        const fileType = file.type.split('/')[0]; // 获取文件类型，比如image, text, application等
+        
+        if (fileType === "image") {
+            const img = document.createElement("img");
+            img.src = e.target.result;
+            filePreview.appendChild(img);
+        } else if (fileType === "text") {
+            const textContent = document.createElement("pre");
+            textContent.textContent = e.target.result;
+            filePreview.appendChild(textContent);
+        } else if (file.type === "application/pdf") {
+            const iframe = document.createElement("iframe");
+            iframe.src = e.target.result;
+            iframe.width = "100%";
+            iframe.height = "500px";
+            filePreview.appendChild(iframe);
+        } else {
+            filePreview.textContent = "无法预览该文件类型。";
+        }
+    };
+    
+    // 读取文件内容进行预览
+    if (file.type.startsWith("image")) {
+        fileReader.readAsDataURL(file); // 图片读取为DataURL
+    } else if (file.type === "application/pdf") {
+        fileReader.readAsDataURL(file); // PDF读取为DataURL
+    } else if (file.type.startsWith("text")) {
+        fileReader.readAsText(file); // 文本文件读取
+    } else {
+        filePreview.textContent = "无法预览该文件类型。";
+    }
+    
+    fileList.appendChild(filePreview);
+}
+function updateFileList() {
+    const fileList = document.getElementById("file-list");
+    fileList.innerHTML = ""; // 清空当前列表
+    
+    // 遍历并显示文件和标签
+    files.forEach((file, index) => {
+        const fileItem = document.createElement("div");
+        fileItem.classList.add("file-item");
+        
+        const fileName = document.createElement("strong");
+        fileName.textContent = file.name;
+        fileName.style.cursor = "pointer";
+        fileName.onclick = () => previewFile(file);
+        
+        const tagList = document.createElement("ul");
+        tagList.classList.add("tag-list");
+        
+        const fileTags = tags[file.name];
+        fileTags.forEach((tag) => {
+            const tagItem = document.createElement("li");
+            tagItem.textContent = tag;
+            tagList.appendChild(tagItem);
+        });
+        
+        // 添加删除按钮
+        const deleteButton = document.createElement("button");
+        deleteButton.textContent = "删除文件";
+        deleteButton.onclick = () => deleteFile(index);
+        
+        fileItem.appendChild(fileName);
+        fileItem.appendChild(tagList);
+        fileItem.appendChild(deleteButton);
+        fileList.appendChild(fileItem);
+    });
+}
+
+function deleteFile(index) {
+    files.splice(index, 1);  // 从文件列表中删除该文件
+    updateFileList();        // 更新文件列表
+}
+
+    </script>
+</body>
+</html>
